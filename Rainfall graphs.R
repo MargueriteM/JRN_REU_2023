@@ -32,9 +32,10 @@ biomet.10.11 <- biomet.10.11 %>%
   mutate(year=year(date_time),
          month=month(date_time),
          doy=yday(date_time),
-         date=date(date_time),
-         time=paste(hour(date_time),minute(date_time),second(date_time), sep=":"))
+         date=date(date_time))
+
 str(biomet.10.11)
+
 # graph rainfall data divided by years
 ggplot(biomet.10.11, aes(date_time, P_RAIN_1_1_1))+
  geom_point()+
@@ -65,4 +66,15 @@ ggplot(biomet.10.11, aes(month, P_RAIN_1_1_1))+
   geom_point()+
   facet_grid(.~year)
 
-L
+# add columns for year/month/date for biomet_all
+biomet_all <- biomet_all %>%
+  mutate(year=year(date_time),
+         month=month(date_time),
+         doy=yday(date_time),
+         date=date(date_time))
+#total of annual data
+annualdata <- biomet_all%>%
+  group_by(year)%>%
+  summarise(total_value= sum(P_RAIN_1_1_1))
+print(annualdata)
+
