@@ -64,3 +64,4 @@ ggplot(biomet.10.11, aes(date_time, P_RAIN_1_1_1))+
 ggplot(biomet.10.11, aes(month, P_RAIN_1_1_1))+
   geom_point()+
   facet_grid(.~year)
+
