@@ -75,10 +75,10 @@ biomet_all <- biomet_all %>%
 #total of annual data
 annualdata <- biomet_all%>%
   group_by(year)%>%
-  summarize(total_value= sum(P_RAIN_1_1_1, na.rm = TRUE))
+  summarize(annual_rain= sum(P_RAIN_1_1_1, na.rm = TRUE))
 print(annualdata)
 
 # graph total annual rainfall data divided by year
-ggplot(annualdata, aes(year, total_value))+
+ggplot(annualdata, aes(year, annual_rain))+
   geom_point()+
   facet_grid(.~year)
