@@ -82,3 +82,25 @@ print(annualdata)
 ggplot(annualdata, aes(year, annual_rain))+
   geom_point()+
   facet_grid(.~year)
+
+#total monthly data
+monthlydata <- biomet_all%>%
+  group_by(month)%>%
+  summarize(monthly_rain= sum(P_RAIN_1_1_1, na.rm = TRUE))
+print(monthlydata)
+
+#graph total monthly rainfall data 
+ggplot(monthlydata, aes(month, monthly_rain))+
+  geom_point()+
+  facet_grid(.~month)
+
+#total daily data
+dailydata <- biomet_all%>%
+  group_by(doy)%>%
+  summarize(daily_rain= sum(P_RAIN_1_1_1, na.rm = TRUE))
+print(dailydata)
+
+#graph total monthly rainfall data 
+ggplot(dailydata, aes(doy, daily_rain))+
+  geom_point()+
+  facet_grid(.~doy)
