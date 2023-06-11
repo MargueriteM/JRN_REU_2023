@@ -56,7 +56,7 @@ ggplot(biomet.10.11, aes(date_time, P_RAIN_1_1_1))+
   geom_point()+
   facet_grid(.~year)
 
-# graph by years, months, time
+# graph by years (2010-2011), months, time
 ggplot(biomet.10.11, aes(date_time, P_RAIN_1_1_1))+
   geom_point()+
   facet_grid(year~month, scales="free")
@@ -95,23 +95,44 @@ ggplot(monthlydata, aes(month, monthly_rain))+
   facet_grid(.~month)
 
 #total monthly data for each year
-monthly_yearlydata <- biomet_all%>%
+monthly_annualdata <- biomet_all%>%
   group_by(month, year)%>%
-  summarize(monthly_yearlyrain= sum(P_RAIN_1_1_1, na.rm = TRUE))
-print(monthly_yearlydata)
+  summarize(monthly_annualrain= sum(P_RAIN_1_1_1, na.rm = TRUE))
+print(monthly_annualdata)
 
 #graph total monthly rainfall data for each year
-ggplot(monthly_yearlydata, aes(month, monthly_yearlyrain))+
+ggplot(monthly_annualdata, aes(month, monthly_annualrain))+
   geom_point()+
   facet_grid(month~year)
 
-#total daily data
-dailydata <- biomet_all%>%
+#total daily data for years combined
+daily_data <- biomet_all%>%
   group_by(doy)%>%
   summarize(daily_rain= sum(P_RAIN_1_1_1, na.rm = TRUE))
-print(dailydata)
+print(daily_data)
 
-#graph total daily rainfall data 
-ggplot(dailydata, aes(doy, daily_rain))+
+str(daily_data)
+#graph total daily rainfall data years combined ****
+ggplot(daily_data, aes(doy, daily_rain))+
   geom_point()+
   facet_grid(.~doy)
+
+#total daily data for each year
+daily_annualdata <- biomet_all%>%
+  group_by(doy, year)%>%
+  summarize(daily_annualrain= sum(P_RAIN_1_1_1, na.rm = TRUE))
+print(daily_annualdata)
+
+#graph total daily rainfall data each year ****
+ggplot(daily_annualdata, aes(doy, daily_annualrain))+
+  geom_point()+
+  facet_grid(doy~year)
+
+
+#monthly boxplot
+ggplot(monthlydata, aes(month, monthly_rain))+
+  geom_boxplot(aes(group= month))
+
+#daily boxplot
+ggplot(daily_data, aes(doy, daily_rain))+
+  geom_boxplot(aes(group= doy))
