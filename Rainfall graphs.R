@@ -72,16 +72,15 @@ biomet_all <- biomet_all %>%
          month=month(date_time),
          doy=yday(date_time),
          date=date(date_time))
-#total of annual data
+#total of annual data**
 annualdata <- biomet_all%>%
   group_by(year)%>%
   summarize(annual_rain= sum(P_RAIN_1_1_1, na.rm = TRUE))
 print(annualdata)
 
 # graph total annual rainfall data divided by year
-ggplot(annualdata, aes(year, annual_rain))+
-  geom_point()+
-  facet_grid(.~year)
+ggplot(annualdata, aes(factor(year), annual_rain))+
+  geom_col()
 
 #total monthly data for all years combined
 monthlydata <- biomet_all%>%
@@ -90,9 +89,8 @@ monthlydata <- biomet_all%>%
 print(monthlydata)
 
 #graph total monthly rainfall data for all years combined
-ggplot(monthlydata, aes(month, monthly_rain))+
-  geom_point()+
-  facet_grid(.~month)
+ggplot(monthlydata, aes(factor(month), monthly_rain))+
+  geom_point()
 
 #total monthly data for each year
 monthly_annualdata <- biomet_all%>%
@@ -101,9 +99,9 @@ monthly_annualdata <- biomet_all%>%
 print(monthly_annualdata)
 
 #graph total monthly rainfall data for each year
-ggplot(monthly_annualdata, aes(month, monthly_annualrain))+
-  geom_point()+
-  facet_grid(month~year)
+ggplot(monthly_annualdata, aes(factor(month), monthly_annualrain))+
+  geom_point()
+  
 
 #total daily data for years combined
 daily_data <- biomet_all%>%
@@ -114,25 +112,61 @@ print(daily_data)
 str(daily_data)
 #graph total daily rainfall data years combined ****
 ggplot(daily_data, aes(doy, daily_rain))+
-  geom_point()+
-  facet_grid(.~doy)
+  geom_point()
 
 #total daily data for each year
 daily_annualdata <- biomet_all%>%
-  group_by(doy, year)%>%
-  summarize(daily_annualrain= sum(P_RAIN_1_1_1, na.rm = TRUE))
-print(daily_annualdata)
+  group_by(date)%>%
+  summarize(daily_annualrain= sum(P_RAIN_1_1_1, na.rm = TRUE))%>%
+  mutate(year=year(date),
+         month=month(date),
+         doy=yday(date))
+head(daily_annualdata)
+#Categorize daily rain into no rain, small events, and large events
+daily_annualdata<- daily_annualdata%>%
+  mutate(raincat= case_when(
+    daily_annualrain==0~ "no_rain",
+    daily_annualrain>0&daily_annualrain<=5~ "small_events",
+    daily_annualrain>5~"large_events"))%>%
+  mutate(raincat=factor(raincat,levels=c("no_rain", "small_events", "large_events")))
+
+#graph raincat categories
+ggplot(daily_annualdata, aes(raincat, daily_annualrain))+
+  geom_point()
 
 #graph total daily rainfall data each year ****
 ggplot(daily_annualdata, aes(doy, daily_annualrain))+
   geom_point()+
-  facet_grid(doy~year)
+  facet_grid(year~.)
 
 
-#monthly boxplot
-ggplot(monthlydata, aes(month, monthly_rain))+
+#monthly rain across all years boxplot
+ggplot(monthly_annualdata, aes(factor(month), monthly_annualrain))+
   geom_boxplot(aes(group= month))
 
 #daily boxplot
-ggplot(daily_data, aes(doy, daily_rain))+
-  geom_boxplot(aes(group= doy))
+ggplot(daily_annualdata, aes(month, daily_annualrain))+
+  geom_boxplot(aes(group= month))
+
+
+#graph daily rain by category
+ggplot(daily_annualdata, aes(doy, daily_annualrain, color=raincat))+
+  geom_point()+
+  facet_grid(year~.)
+
+#graph rain categories by month
+ggplot(daily_annualdata, aes(factor(month), daily_annualrain, color=raincat))+
+  geom_boxplot()
+
+
+#new dataframe with counts of no rain, small, and large events per month and year
+rain_eventcount<- daily_annualdata%>%
+  group_by(month,year)%>%
+  count(raincat)
+
+#dataframe with counts of only small and large events per year ****exclude no rain events
+rain_eventcount<- daily_annualdata%>%
+  filter(raincat !="no_rain")%>%
+  group_by(month,year)%>%
+  count(raincat)
+  
