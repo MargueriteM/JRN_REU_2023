@@ -230,5 +230,91 @@ eventtotals<-flags%>%
     eventrain>5~"large_events"))%>%
       mutate(raincat=factor(raincat,levels=c("small_events", "large_events")))
 
+#graph total rainfall per event
+ggplot(eventtotals, aes(factor(year), eventrain, color=raincat))+
+  geom_point()
 
+ggplot(eventtotals, aes(factor(year), eventrain, color=raincat))+
+  geom_boxplot()
+#histogram of count and eventrain separated by event type
+  ggplot(na.omit(eventtotals), aes(eventrain))+
+  geom_histogram()+
+  facet_grid(year~raincat)
+#calculate total rainfall per event (added month, doy)
+eventtotals<-flags%>%
+  group_by(year, month, doy, eventid)%>%
+  summarise(eventrain=sum(P_RAIN_1_1_1))%>%
+  mutate(raincat=case_when(
+    eventrain>0&eventrain<=5~ "small_events",
+    eventrain>5~"large_events"))%>%
+  mutate(raincat=factor(raincat,levels=c("small_events", "large_events")))
+#graph total rainfall per event each month
+ggplot(eventtotals, aes(factor(month), eventrain, color=raincat))+
+  geom_point()
+#boxplot
+ggplot(eventtotals, aes(factor(month), eventrain, color=raincat))+
+  geom_boxplot()
 
+# graph total rainfall per event each day
+ggplot(eventtotals, aes(factor(doy), eventrain, color=raincat))+
+  geom_point()
+
+ggplot(na.omit(eventtotals), aes(factor(doy), eventrain, color=raincat))+
+  geom_point()
+
+ggplot(eventtotals, aes(factor(doy), eventrain, color=raincat))+
+  geom_point()+
+  facet_grid(year~.)
+
+ggplot(na.omit(eventtotals), aes(factor(doy), eventrain, color=raincat))+
+  geom_point()+
+  facet_grid(year~.)
+
+#calculate number of events in each month across all years
+m_eventrain_count <- eventtotals %>% 
+  group_by(month, raincat) %>% 
+  summarise(n_rainevent= n())
+  
+#graph number events in each month across all years
+ggplot(na.omit(m_eventrain_count), aes(factor(month), n_rainevent, fill= raincat))+
+  geom_col()
+
+ggplot(na.omit(m_eventrain_count), aes(factor(month), n_rainevent, fill= raincat))+
+  geom_col(position = "dodge")
+
+#calculate number of events in each year
+y_eventrain_count <- eventtotals %>% 
+  group_by(year, raincat) %>% 
+  summarise(n_rainevent= n())
+
+#graph number events in each year
+ggplot(na.omit(y_eventrain_count), aes(factor(year), n_rainevent, fill= raincat))+
+  geom_col(position="dodge")
+
+#calculate monthly total rain for each raincat 
+totalrain_event_m <- eventtotals %>% 
+  group_by(eventrain, month, raincat) %>%
+  summarise(eventrain= sum(eventrain))
+
+#graph monthly total rain for each raincat *check
+ggplot(na.omit(totalrain_event_m), aes(factor(month), eventrain, fill= raincat))+
+  geom_col()
+
+#calculate annual total rain for each raincat 
+totalrain_event_y <- eventtotals %>% 
+  group_by(eventrain, year, raincat) %>%
+  summarise(eventrain= sum(eventrain))
+
+#graph monthly total rain for each raincat *check
+ggplot(na.omit(totalrain_event_y), aes(factor(year), eventrain, fill= raincat))+
+  geom_col()
+
+#calculate total annual precipitation and total in rain event category
+totalrain_event_y <- eventtotals %>% 
+  group_by(eventrain, year, raincat) %>%
+  mutate(eventrain= sum(eventrain)) %>% 
+  summarise(n_rainevent= n())
+  
+#graph *check
+ggplot(na.omit(totalrain_event_y), aes(eventrain, n_rainevent, color= raincat))+
+  geom_line()
