@@ -118,9 +118,10 @@ ggplot(daily_data, aes(doy, daily_rain))+
 daily_annualdata <- biomet_all%>%
   group_by(date)%>%
   summarize(daily_annualrain= sum(P_RAIN_1_1_1, na.rm = TRUE))%>%
-  mutate(year=year(date),
-         month=month(date),
-         doy=yday(date))
+  mutate(daily_cumulative= cumsum(daily_annualrain)) %>% 
+           mutate(year=year(date),
+                  month=month(date),
+                  doy=yday(date))
 head(daily_annualdata)
 #Categorize daily rain into no rain, small events, and large events
 daily_annualdata<- daily_annualdata%>%
@@ -293,28 +294,49 @@ ggplot(na.omit(y_eventrain_count), aes(factor(year), n_rainevent, fill= raincat)
 
 #calculate monthly total rain for each raincat 
 totalrain_event_m <- eventtotals %>% 
-  group_by(eventrain, month, raincat) %>%
-  summarise(eventrain= sum(eventrain))
+  group_by(year, month, raincat) %>%
+  summarise(eventrain= sum(eventrain), 
+            n_rainevent= n())
+
+monthly_mean_event <- na.omit(totalrain_event_m) %>%
+  group_by(month, raincat) %>% 
+  summarise(event_mean= mean(eventrain, na.rm=TRUE),
+            n_mean=mean(n_rainevent, na.rm=TRUE))
 
 #graph monthly total rain for each raincat *check
-ggplot(na.omit(totalrain_event_m), aes(factor(month), eventrain, fill= raincat))+
-  geom_col()
+ggplot(monthly_mean_event, aes(factor(month), event_mean, fill= raincat))+
+  geom_col(position = "dodge")
+
+ggplot(monthly_mean_event, aes(factor(month), n_mean, fill= raincat))+
+  geom_col(position = "dodge")
 
 #calculate annual total rain for each raincat 
 totalrain_event_y <- eventtotals %>% 
-  group_by(eventrain, year, raincat) %>%
+  group_by(year, raincat) %>%
   summarise(eventrain= sum(eventrain))
 
 #graph monthly total rain for each raincat *check
 ggplot(na.omit(totalrain_event_y), aes(factor(year), eventrain, fill= raincat))+
-  geom_col()
+  geom_col(position = "dodge")
+
 
 #calculate total annual precipitation and total in rain event category
-totalrain_event_y <- eventtotals %>% 
-  group_by(eventrain, year, raincat) %>%
-  mutate(eventrain= sum(eventrain)) %>% 
-  summarise(n_rainevent= n())
-  
-#graph *check
-ggplot(na.omit(totalrain_event_y), aes(eventrain, n_rainevent, color= raincat))+
-  geom_line()
+totalrain_event_y <- na.omit(eventtotals) %>% 
+  group_by(year, raincat) %>%
+  summarise(n_rainevent= n(),
+            eventrain= sum(eventrain))
+
+# Merge total annual rain with annual event rain
+totalrain_event_y <- right_join(annualdata, totalrain_event_y, by=join_by(year))
+
+
+#graph regression of annual and event rainfall
+ggplot(totalrain_event_y, aes(annual_rain, eventrain, color= raincat))+
+  geom_point()+
+  geom_smooth(method="lm", alpha=0)+
+  geom_abline(intercept = 0, slope = 1)+
+  labs(x= "Annual Total Rainfall (mm)", y= "Total Event Rainfall (mm)")+
+  scale_color_discrete(name= "Size Category", labels= c("Small (<5mm)", "Large (>5mm)"))+
+  theme_bw()
+
+
