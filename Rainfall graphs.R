@@ -339,4 +339,54 @@ ggplot(totalrain_event_y, aes(annual_rain, eventrain, color= raincat))+
   scale_color_discrete(name= "Size Category", labels= c("Small (<5mm)", "Large (>5mm)"))+
   theme_bw()
 
+# Seasonal rain distribution- Daily rainfall per month graph
+ggplot(daily_annualdata, aes(factor(month), daily_annualrain))+
+  geom_boxplot()+
+  labs(x= "Month", y= "Daily Rainfall (mm)")
 
+ggplot(daily_annualdata, aes(factor(month), daily_annualrain))+
+  geom_col(fill= "lightblue")+
+  labs(x= "Month", y= "Daily Rainfall (mm)")
+
+# Annual rain graph
+ggplot(annualdata, aes(factor(year), annual_rain))+
+  geom_col(fill="lightblue", color= "darkblue")+
+  geom_abline(intercept = 250, slope = 0)+
+  labs(x= "Year", y= "Total Annual Rainfall (mm)")+
+  theme_bw()
+
+# Month and event rain graph
+ggplot(na.omit(totalrain_event_m), aes(factor(month), eventrain, color= raincat))+
+  geom_boxplot()+
+  labs(x= "Month", y= "Event Rainfall (mm)")+
+  scale_color_discrete(name= "Size Category", labels= c("Small (<5mm)", "Large (>5mm)"))+
+  theme_bw()
+
+# Month and event count graph
+ggplot(na.omit(totalrain_event_m), aes(factor(month), n_rainevent, color= raincat))+
+  geom_boxplot()+
+  labs(x= "Month", y= "Event Count")+
+  scale_color_discrete(name= "Size Category", labels= c("Small (<5mm)", "Large (>5mm)"))+
+  theme_bw()
+
+
+# Year and Event Rainfall graph
+ggplot(na.omit(totalrain_event_y), aes(factor(year), eventrain, fill= raincat))+
+  geom_col(position = "dodge")+
+  labs(x= "Year", y= "Event Rainfall (mm)")+
+  scale_color_discrete(name= "Size Category", labels= c("Small (<5mm)", "Large (>5mm)"))+
+  theme_bw()
+
+# Year and Event Count graph
+ggplot(na.omit(totalrain_event_y), aes(factor(year), n_rainevent, fill= raincat))+
+  geom_col(position = "dodge")+
+  labs(x= "Year", y= "Event Count")+
+  scale_color_discrete(name= "Size Category", labels= c("Small (<5mm)", "Large (>5mm)"))+
+  theme_bw()
+
+# 
+ggplot(daily_annualdata, aes(doy, daily_cumulative, color= factor(year)))+
+  geom_point()+
+  labs(x= "DOY", y= "Daily Cumulative Rainfall (mm)")
+
+  
