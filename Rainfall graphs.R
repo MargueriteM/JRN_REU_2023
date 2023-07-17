@@ -71,7 +71,8 @@ biomet_all <- biomet_all %>%
   mutate(year=year(date_time),
          month=month(date_time),
          doy=yday(date_time),
-         date=date(date_time))
+         date=date(date_time)) %>% 
+  filter(date>= as.Date("2010-07-01"))
 #total of annual data**
 annualdata <- biomet_all%>%
   group_by(year)%>%
@@ -98,6 +99,12 @@ monthly_annualdata <- biomet_all%>%
   summarize(monthly_annualrain= sum(P_RAIN_1_1_1, na.rm = TRUE))
 print(monthly_annualdata)
 
+#Calculate monthly mean across all years
+monthly_meandata <- monthly_annualdata %>% 
+  group_by(month) %>% 
+  summarise(monthlymean= mean(monthly_annualrain),
+            monthlysd= sd(monthly_annualrain))
+
 #graph total monthly rainfall data for each year
 ggplot(monthly_annualdata, aes(factor(month), monthly_annualrain))+
   geom_point()
@@ -118,10 +125,18 @@ ggplot(daily_data, aes(doy, daily_rain))+
 daily_annualdata <- biomet_all%>%
   group_by(date)%>%
   summarize(daily_annualrain= sum(P_RAIN_1_1_1, na.rm = TRUE))%>%
-  mutate(daily_cumulative= cumsum(daily_annualrain)) %>% 
            mutate(year=year(date),
                   month=month(date),
                   doy=yday(date))
+
+# daily cumulative by year
+
+daily_annualdata <- daily_annualdata %>% 
+  group_by(year) %>% 
+  mutate(daily_cumsum= cumsum(daily_annualrain)) 
+
+
+
 head(daily_annualdata)
 #Categorize daily rain into no rain, small events, and large events
 daily_annualdata<- daily_annualdata%>%
@@ -340,13 +355,15 @@ ggplot(totalrain_event_y, aes(annual_rain, eventrain, color= raincat))+
   theme_bw()
 
 # Seasonal rain distribution- Daily rainfall per month graph
-ggplot(daily_annualdata, aes(factor(month), daily_annualrain))+
+ggplot(monthly_annualdata, aes(factor(month), monthly_annualrain))+
   geom_boxplot()+
-  labs(x= "Month", y= "Daily Rainfall (mm)")
+  labs(x= "Month", y= "Monthly Rainfall (mm)")
 
-ggplot(daily_annualdata, aes(factor(month), daily_annualrain))+
-  geom_col(fill= "lightblue")+
-  labs(x= "Month", y= "Daily Rainfall (mm)")
+# Monthly mean and sd graph
+ggplot(monthly_meandata, aes(factor(month), monthlymean))+
+  geom_col()+
+  geom_errorbar(aes(ymin=monthlymean-monthlysd, ymax= monthlymean+monthlysd), 
+                width= 0.2)
 
 # Annual rain graph
 ggplot(annualdata, aes(factor(year), annual_rain))+
@@ -374,19 +391,21 @@ ggplot(na.omit(totalrain_event_m), aes(factor(month), n_rainevent, color= rainca
 ggplot(na.omit(totalrain_event_y), aes(factor(year), eventrain, fill= raincat))+
   geom_col(position = "dodge")+
   labs(x= "Year", y= "Event Rainfall (mm)")+
-  scale_color_discrete(name= "Size Category", labels= c("Small (<5mm)", "Large (>5mm)"))+
+  scale_fill_discrete(name= "Size Category", labels= c("Small (<5mm)", "Large (>5mm)"))+
   theme_bw()
 
 # Year and Event Count graph
 ggplot(na.omit(totalrain_event_y), aes(factor(year), n_rainevent, fill= raincat))+
   geom_col(position = "dodge")+
   labs(x= "Year", y= "Event Count")+
-  scale_color_discrete(name= "Size Category", labels= c("Small (<5mm)", "Large (>5mm)"))+
+  scale_fill_discrete(name= "Size Category", labels= c("Small (<5mm)", "Large (>5mm)"))+
   theme_bw()
 
-# 
-ggplot(daily_annualdata, aes(doy, daily_cumulative, color= factor(year)))+
-  geom_point()+
-  labs(x= "DOY", y= "Daily Cumulative Rainfall (mm)")
+# Daily cumulative rainfall per year
+ggplot(daily_annualdata, aes(doy, daily_cumsum, color= factor(year)))+
+  geom_line()+
+  labs(x= "DOY", y= "Daily Cumulative Rainfall (mm)")+
+  scale_color_discrete(name= "Year")+
+  theme_bw()
 
   
