@@ -4,7 +4,7 @@ library(data.table)
 library(ggplot2)
 library(dplyr)
 library(lubridate)
-
+library(cowplot)
 # set working directory to location where data is saved
 setwd("~/Desktop/Biomet Data")
 # import data files one by one, use header = TRUE to assign first row as column names
@@ -353,17 +353,20 @@ ggplot(totalrain_event_y, aes(annual_rain, eventrain, color= raincat))+
   labs(x= "Annual Total Rainfall (mm)", y= "Total Event Rainfall (mm)")+
   scale_color_discrete(name= "Size Category", labels= c("Small (<5mm)", "Large (>5mm)"))+
   theme_bw()
-
+#*****summary graphs
 # Seasonal rain distribution- Daily rainfall per month graph
 ggplot(monthly_annualdata, aes(factor(month), monthly_annualrain))+
-  geom_boxplot()+
-  labs(x= "Month", y= "Monthly Rainfall (mm)")
+  geom_boxplot(color="navy")+
+  labs(x= "Month", y= "Monthly Rainfall (mm)")+
+  theme_bw()
 
 # Monthly mean and sd graph
 ggplot(monthly_meandata, aes(factor(month), monthlymean))+
-  geom_col()+
+  geom_col(fill="navy")+
   geom_errorbar(aes(ymin=monthlymean-monthlysd, ymax= monthlymean+monthlysd), 
-                width= 0.2)
+                width= 0.2)+
+  labs(x= "Month", y= "Monthly Average Rainfall (mm)")+
+  theme_bw()
 
 # Annual rain graph
 ggplot(annualdata, aes(factor(year), annual_rain))+
@@ -377,6 +380,9 @@ ggplot(na.omit(totalrain_event_m), aes(factor(month), eventrain, color= raincat)
   geom_boxplot()+
   labs(x= "Month", y= "Event Rainfall (mm)")+
   scale_color_discrete(name= "Size Category", labels= c("Small (<5mm)", "Large (>5mm)"))+
+  scale_color_manual(name = "Size Category",
+                     labels = c("Small (<5mm)", "Large (>5mm)"),
+                     values = c("deepskyblue", "navy")) +
   theme_bw()
 
 # Month and event count graph
@@ -384,7 +390,11 @@ ggplot(na.omit(totalrain_event_m), aes(factor(month), n_rainevent, color= rainca
   geom_boxplot()+
   labs(x= "Month", y= "Event Count")+
   scale_color_discrete(name= "Size Category", labels= c("Small (<5mm)", "Large (>5mm)"))+
+  scale_color_manual(name = "Size Category",
+                     labels = c("Small (<5mm)", "Large (>5mm)"),
+                     values = c("deepskyblue", "navy"))+ 
   theme_bw()
+
 
 
 # Year and Event Rainfall graph
@@ -392,6 +402,9 @@ ggplot(na.omit(totalrain_event_y), aes(factor(year), eventrain, fill= raincat))+
   geom_col(position = "dodge")+
   labs(x= "Year", y= "Event Rainfall (mm)")+
   scale_fill_discrete(name= "Size Category", labels= c("Small (<5mm)", "Large (>5mm)"))+
+  scale_fill_manual(name = "Size Category",
+                     labels = c("Small (<5mm)", "Large (>5mm)"),
+                     values = c("deepskyblue", "navy"))+
   theme_bw()
 
 # Year and Event Count graph
@@ -399,6 +412,9 @@ ggplot(na.omit(totalrain_event_y), aes(factor(year), n_rainevent, fill= raincat)
   geom_col(position = "dodge")+
   labs(x= "Year", y= "Event Count")+
   scale_fill_discrete(name= "Size Category", labels= c("Small (<5mm)", "Large (>5mm)"))+
+  scale_fill_manual(name = "Size Category",
+                    labels = c("Small (<5mm)", "Large (>5mm)"),
+                    values = c("deepskyblue", "navy"))+
   theme_bw()
 
 # Daily cumulative rainfall per year
@@ -408,4 +424,40 @@ ggplot(daily_annualdata, aes(doy, daily_cumsum, color= factor(year)))+
   scale_color_discrete(name= "Year")+
   theme_bw()
 
-  
+# soil moisture and events graphs based on small and large event count, 2014- most large event count, 2015- most small event count
+# graph timeseries 2014 and 2015 rainfall
+head(flags)
+flags %>% 
+  filter(year== 2014| year== 2015) %>% 
+  ggplot(., aes(date_time, P_RAIN_1_1_1), color= factor(eventid))+
+  geom_col()+
+  theme(legend.position = "none")
+
+p.rainevent <- na.omit(eventtotals) %>% 
+  filter(year== 2013) %>% 
+  ggplot(., aes(doy, eventrain, fill= raincat))+
+  geom_col(position = "dodge")+
+  labs(x= "DOY", y= "Event Rainfall")+
+  theme(legend.position = c(0.1, 0.9),   # Set the legend position (left top corner)
+        legend.justification = c(0, 1),  # Set the justification for the legend position
+        legend.background = element_rect(color = "black", fill = "white"))+
+  scale_fill_discrete(name= "Size Category", labels= c("Small (<5mm)", "Large (>5mm)"))+
+  scale_fill_manual(name = "Size Category",
+                    labels = c("Small (<5mm)", "Large (>5mm)"),
+                    values = c("deepskyblue", "navy"))
+  #facet_grid(year~.)
+
+p.soilmoisture <-biomet_all %>% 
+  filter(year==2013) %>% 
+  ggplot(., aes(x=date_time))+
+  labs(x= "Date", y= "Soil Water Content")+
+  geom_line(aes(y=SWC_1_1_1), color= "red")+
+  geom_line(aes(y=SWC_1_2_1), color= "blue")+
+  geom_line(aes(y=SWC_1_3_1), color= "purple")+
+  geom_line(aes(y=SWC_1_4_1), color= "black")
+
+
+#graph rainfall and soil mositure together
+plot_grid(p.rainevent, p.soilmoisture, ncol = 1)
+
+
