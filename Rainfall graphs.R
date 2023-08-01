@@ -371,7 +371,7 @@ ggplot(monthly_meandata, aes(factor(month), monthlymean))+
 # Annual rain graph
 ggplot(annualdata, aes(factor(year), annual_rain))+
   geom_col(fill="lightblue", color= "darkblue")+
-  geom_abline(intercept = 250, slope = 0)+
+  geom_abline(intercept = 232, slope = 0)+
   labs(x= "Year", y= "Total Annual Rainfall (mm)")+
   theme_bw()
 
@@ -437,10 +437,10 @@ p.rainevent <- na.omit(eventtotals) %>%
   filter(year== 2013) %>% 
   ggplot(., aes(doy, eventrain, fill= raincat))+
   geom_col(position = "dodge")+
-  labs(x= "DOY", y= "Event Rainfall")+
+  labs(x= "DOY", y= "Event Rainfall (mm)")+
   theme(legend.position = c(0.1, 0.9),   # Set the legend position (left top corner)
-        legend.justification = c(0, 1),  # Set the justification for the legend position
-        legend.background = element_rect(color = "black", fill = "white"))+
+       legend.justification = c(0, 1),  # Set the justification for the legend position
+       legend.background = element_rect(color = "black", fill = "white"))+
   scale_fill_discrete(name= "Size Category", labels= c("Small (<5mm)", "Large (>5mm)"))+
   scale_fill_manual(name = "Size Category",
                     labels = c("Small (<5mm)", "Large (>5mm)"),
@@ -450,14 +450,50 @@ p.rainevent <- na.omit(eventtotals) %>%
 p.soilmoisture <-biomet_all %>% 
   filter(year==2013) %>% 
   ggplot(., aes(x=date_time))+
-  labs(x= "Date", y= "Soil Water Content")+
+  labs(x= "Date", y= "Soil Water Content (m³/m³)")+
   geom_line(aes(y=SWC_1_1_1), color= "red")+
   geom_line(aes(y=SWC_1_2_1), color= "blue")+
   geom_line(aes(y=SWC_1_3_1), color= "purple")+
   geom_line(aes(y=SWC_1_4_1), color= "black")
 
 
+p.soilmoisture2 <-biomet_all %>% 
+  filter(year==2013) %>% 
+  ggplot(., aes(x=date_time))+
+  labs(x= "Date", y= "Soil Water Content")+
+  geom_line(aes(y=SWC_1_1_1), color= "red")+
+  geom_line(aes(y=SWC_1_4_1), color= "black")
+
 #graph rainfall and soil mositure together
 plot_grid(p.rainevent, p.soilmoisture, ncol = 1)
+
+
+
+#Air temperature 
+
+dailyairtemp <- biomet_all %>% 
+  group_by(date) %>% 
+  summarise(maxTA = max(TA_1_1_1),
+            meanTA= mean(TA_1_1_1, na.rm=TRUE) ,
+            minTA= min(TA_1_1_1)) %>% 
+  mutate(year=year(date),
+         doy= yday(date))
+
+#graph daily air temp
+
+
+  ggplot(dailyairtemp, aes(x=doy))+
+  labs(x= "Date", y= "Air Temperature (C)")+
+  geom_line(aes(y= maxTA), color= "red", linewidth= 0.2)+
+  geom_line(aes(y= meanTA), color= "black")+
+  geom_line(aes(y=minTA), color= "blue", linewidth= 0.2)+
+  facet_wrap(year~.)
+
+  
+    
+
+
+
+
 
 
