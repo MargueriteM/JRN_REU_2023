@@ -72,7 +72,18 @@ biomet_all <- biomet_all %>%
          month=month(date_time),
          doy=yday(date_time),
          date=date(date_time)) %>% 
-  filter(date>= as.Date("2010-07-01"))
+  filter(date>= as.Date("2010-07-01"))%>%
+  filter(P_RAIN_1_1_1 <40)
+
+#Graph Biomet all
+ggplot(biomet_all, aes(date_time, P_RAIN_1_1_1))+
+  geom_line()+
+  labs(x="Date",y="Total Rainfall (mm)")+
+  geom_line(color="navy")+
+  theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5))+
+  ggtitle("Total Rainfall Across Ten Years")
+  
 #total of annual data**
 annualdata <- biomet_all%>%
   group_by(year)%>%
@@ -450,7 +461,7 @@ p.rainevent <- na.omit(eventtotals) %>%
 p.soilmoisture <-biomet_all %>% 
   filter(year==2013) %>% 
   ggplot(., aes(x=date_time))+
-  labs(x= "Date", y= "Soil Water Content (m³/m³)")+
+  labs(x= "Date", y= "Soil Water Content (%)")+
   geom_line(aes(y=SWC_1_1_1), color= "red")+
   geom_line(aes(y=SWC_1_2_1), color= "blue")+
   geom_line(aes(y=SWC_1_3_1), color= "purple")+
