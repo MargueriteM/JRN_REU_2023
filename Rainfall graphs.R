@@ -1,4 +1,11 @@
-# Code to import and work with Biomet USJo1 data files
+# Code to import and work with Biomet USJo1 data files.
+# This code uses rainfall data from the P_RAIN_1_1_1 variable to characterize rain events.
+# Rain events are defined based on at least 6 hours interval. Dunkerley, D. (2008), Identifying individual rain events from pluviograph records: a review with analysis of data from an Australian dryland site. Hydrol. Process., 22: 5024-5036. https://doi.org/10.1002/hyp.7122
+# For individual rain events, we calculated total event rainfall, numbered each event, classified into large and small events. 
+# We classified large and small events according to the Petrie paper from 2014. Petrie, M. D., Collins, S. L., Gutzler, D. S., & Moore, D. M. (2014). Regional trends and local variability in monsoon precipitation in the Northern Chihuahuan Desert, USA. Journal of Arid Environments, 103, 63–70. https://doi.org/10.1016/j.jaridenv.2014.01.005
+# This code was developed by Isabel Uribe and Marguerite Mauritz.
+# For JRN-LTER REU 2023.
+
 # Load libraries
 library(data.table)
 library(ggplot2)
@@ -275,6 +282,10 @@ eventtotals<-flags%>%
     eventrain>0&eventrain<=5~ "small_events",
     eventrain>5~"large_events"))%>%
   mutate(raincat=factor(raincat,levels=c("small_events", "large_events")))
+# Export eventtotals as csv
+write.csv(na.omit(eventtotals), "Rainevents_USJo1_2010_2020.csv", row.names = FALSE)
+
+
 #graph total rainfall per event each month
 ggplot(eventtotals, aes(factor(month), eventrain, color=raincat))+
   geom_point()
