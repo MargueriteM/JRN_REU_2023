@@ -3,6 +3,9 @@
 # Rain events are defined based on at least 6 hours interval. Dunkerley, D. (2008), Identifying individual rain events from pluviograph records: a review with analysis of data from an Australian dryland site. Hydrol. Process., 22: 5024-5036. https://doi.org/10.1002/hyp.7122
 # For individual rain events, we calculated total event rainfall, numbered each event, classified into large and small events. 
 # We classified large and small events according to the Petrie paper from 2014. Petrie, M. D., Collins, S. L., Gutzler, D. S., & Moore, D. M. (2014). Regional trends and local variability in monsoon precipitation in the Northern Chihuahuan Desert, USA. Journal of Arid Environments, 103, 63–70. https://doi.org/10.1016/j.jaridenv.2014.01.005
+# Input data can be found at Craig Tweedie (2023), AmeriFlux BASE US-Jo1 Jornada Experimental Range Bajada Site, Ver. 3-5, AmeriFlux AMP, (Dataset). https://doi.org/10.17190/AMF/1767833
+# The data format at AmeriFlux differs from Biomet_USJo1 files used in this code
+# However, AmeriFlux data contains P_RAIN_1_1_1, P_RAIN_2_1_1, P_RAIN_3_1_1
 # This code was developed by Isabel Uribe and Marguerite Mauritz.
 # For JRN-LTER REU 2023.
 
