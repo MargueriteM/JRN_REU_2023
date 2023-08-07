@@ -12,6 +12,7 @@ library(ggplot2)
 library(dplyr)
 library(lubridate)
 library(cowplot)
+library(tidyr)
 # set working directory to location where data is saved
 setwd("~/Desktop/Biomet Data")
 # import data files one by one, use header = TRUE to assign first row as column names
@@ -26,52 +27,6 @@ biometfiles <- list.files(path="~/Desktop/Biomet Data", full.names=TRUE,pattern=
 # read files and bind them into one file. fill=TRUE because of the missing columns in 2011
 biomet_all <- do.call("rbind", lapply(biometfiles[1:11], header = TRUE, fread, sep=","))
 
-# format date/time column to date/object
-biomet.10.11 <- biomet.10.11 %>%
-  mutate(date_time=ymd_hms(date_time))
-
-# make exploratory graph of rainfall data
-ggplot(biomet.10.11, aes(date_time, P_RAIN_1_1_1))+
-  geom_point()
-
-# add columns for year/month/date
-biomet.10.11 <- biomet.10.11 %>%
-  mutate(year=year(date_time),
-         month=month(date_time),
-         doy=yday(date_time),
-         date=date(date_time))
-
-str(biomet.10.11)
-
-# graph rainfall data divided by years
-ggplot(biomet.10.11, aes(date_time, P_RAIN_1_1_1))+
- geom_point()+
- facet_grid(.~year)
-
-# graph by years and months
-ggplot(biomet.10.11, aes(doy, P_RAIN_1_1_1))+
- geom_point()+
- facet_grid(year~month, scales="free")
-
-#view timestamp column only
-column_view <- biomet.10.11$time
-# Print the column view
-print(column_view)
-
-# graph rainfall data divided by time and years
-ggplot(biomet.10.11, aes(date_time, P_RAIN_1_1_1))+
-  geom_point()+
-  facet_grid(.~year)
-
-# graph by years (2010-2011), months, time
-ggplot(biomet.10.11, aes(date_time, P_RAIN_1_1_1))+
-  geom_point()+
-  facet_grid(year~month, scales="free")
-
-# graph rainfall data divided by month
-ggplot(biomet.10.11, aes(month, P_RAIN_1_1_1))+
-  geom_point()+
-  facet_grid(.~year)
 
 # add columns for year/month/date for biomet_all
 biomet_all <- biomet_all %>%
@@ -81,9 +36,39 @@ biomet_all <- biomet_all %>%
          date=date(date_time)) %>% 
   filter(date>= as.Date("2010-07-01"))%>%
   filter(P_RAIN_1_1_1 <40)
+# Calculate average rainfall across P_RAIN_1_1_1, P_RAIN_2_1_1, P_RAIN_3_1_1.
+# Graph correlations between all buckets
+
+ggplot(biomet_all, aes(P_RAIN_1_1_1, P_RAIN_2_1_1))+
+  geom_point()+
+  geom_abline(slope=1, intercept = 0, color="red")
+
+ggplot(biomet_all, aes(P_RAIN_1_1_1, P_RAIN_3_1_1))+
+  geom_point()+
+  geom_abline(slope=1, intercept = 0, color="red")
+
+ggplot(biomet_all, aes(P_RAIN_2_1_1, P_RAIN_3_1_1))+
+  geom_point()+
+  geom_abline(slope=1, intercept = 0, color="red")
+
+ggplot(biomet_all, aes(x= date_time))+
+  geom_line(aes(y= P_RAIN_1_1_1), color= "blue")+
+  geom_line(aes(y= P_RAIN_2_1_1), color= "green")+
+  geom_line(aes(y= P_RAIN_3_1_1), color= "red")
+
+# Calculate average rainfall
+rain_mean <- biomet_all %>% 
+  select(date_time, date, year, month, doy, P_RAIN_1_1_1, P_RAIN_2_1_1, P_RAIN_3_1_1)%>%
+  pivot_longer(!(c(date_time, date, year, month, doy)), names_to= "bucket", values_to= "rainfall")%>%
+  group_by(date_time, year, month, doy)%>%
+  summarise(P_RAIN_mean= mean(rainfall, na.rm=TRUE))
+
+#fraph average rainfall
+ggplot(rain_mean, aes(date_time, P_RAIN_mean))+
+  geom_line()
 
 #Graph Biomet all
-ggplot(biomet_all, aes(date_time, P_RAIN_1_1_1))+
+ggplot(biomet_all, aes(date_time, P_RAIN_mean))+
   geom_line()+
   labs(x="Date",y="Total Rainfall (mm)")+
   geom_line(color="navy")+
@@ -92,9 +77,9 @@ ggplot(biomet_all, aes(date_time, P_RAIN_1_1_1))+
   ggtitle("Total Rainfall Across Ten Years")
   
 #total of annual data**
-annualdata <- biomet_all%>%
+annualdata <- rain_mean%>%
   group_by(year)%>%
-  summarize(annual_rain= sum(P_RAIN_1_1_1, na.rm = TRUE))
+  summarize(annual_rain= sum(P_RAIN_mean, na.rm = TRUE))
 print(annualdata)
 
 # graph total annual rainfall data divided by year
@@ -216,14 +201,11 @@ ggplot(rain_eventcount, aes(factor(month), n))+
 
 
 
-
 # determine rain events that last more than 6 hours (=12 rows)
 # https://stackoverflow.com/questions/51371155/r-select-rainfall-events-and-calculate-rainfall-event-total-from-time-series-da
-flags <- biomet_all %>% 
-  select(date_time, date, year, month, doy, P_RAIN_1_1_1) %>%
-  filter((year==2010 & P_RAIN_1_1_1<39)| year >=2011)%>% # &(DoY>150&DoY<250))%>%
+flags <- rain_mean %>% 
   # Set a rain flag if there is rain registered on the gauge
-  mutate(rainflag = ifelse(P_RAIN_1_1_1 > 0, 1, 0)) %>% 
+  mutate(rainflag = ifelse(P_RAIN_mean > 0, 1, 0)) %>% 
   # Create a column that contains the number of consecutive times there was rain or not.
   # Use `rle`` which indicates how many times consecutive values happen, and `rep`` to repeat it for each row.
   ##mutate(rainlength = rep(rle(rainflag)$lengths, rle(rainflag)$lengths)) %>% 
@@ -250,7 +232,7 @@ flags <- biomet_all %>%
   mutate(eventid = case_when(eventflag==1 ~rep(seq(1,length(rle(eventflag)$lengths)), rle(eventflag)$lengths)))
 
 #graph P_RAIN colored by event ID
-ggplot(flags, aes(doy, P_RAIN_1_1_1, color=factor(eventid)))+
+ggplot(flags, aes(doy, P_RAIN_mean, color=factor(eventid)))+
   geom_point()+
   facet_grid(year~., scales="free_x")+
   theme(legend.position = "none")
@@ -258,7 +240,7 @@ ggplot(flags, aes(doy, P_RAIN_1_1_1, color=factor(eventid)))+
 #calculate total rainfall per event
 eventtotals<-flags%>%
   group_by(year, eventid)%>%
-  summarise(eventrain=sum(P_RAIN_1_1_1))%>%
+  summarise(eventrain=sum(P_RAIN_mean))%>%
   mutate(raincat=case_when(
     eventrain>0&eventrain<=5~ "small_events",
     eventrain>5~"large_events"))%>%
@@ -277,13 +259,13 @@ ggplot(eventtotals, aes(factor(year), eventrain, color=raincat))+
 #calculate total rainfall per event (added month, doy)
 eventtotals<-flags%>%
   group_by(year, month, doy, eventid)%>%
-  summarise(eventrain=sum(P_RAIN_1_1_1))%>%
+  summarise(eventrain=sum(P_RAIN_mean))%>%
   mutate(raincat=case_when(
     eventrain>0&eventrain<=5~ "small_events",
     eventrain>5~"large_events"))%>%
   mutate(raincat=factor(raincat,levels=c("small_events", "large_events")))
 # Export eventtotals as csv
-write.csv(na.omit(eventtotals), "Rainevents_USJo1_2010_2020.csv", row.names = FALSE)
+#write.csv(na.omit(eventtotals), "Rainevents_USJo1_2010_2020.csv", row.names = FALSE)
 
 
 #graph total rainfall per event each month
@@ -451,7 +433,7 @@ ggplot(daily_annualdata, aes(doy, daily_cumsum, color= factor(year)))+
 head(flags)
 flags %>% 
   filter(year== 2014| year== 2015) %>% 
-  ggplot(., aes(date_time, P_RAIN_1_1_1), color= factor(eventid))+
+  ggplot(., aes(date_time, P_RAIN_mean), color= factor(eventid))+
   geom_col()+
   theme(legend.position = "none")
 
