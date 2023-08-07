@@ -61,14 +61,15 @@ rain_mean <- biomet_all %>%
   select(date_time, date, year, month, doy, P_RAIN_1_1_1, P_RAIN_2_1_1, P_RAIN_3_1_1)%>%
   pivot_longer(!(c(date_time, date, year, month, doy)), names_to= "bucket", values_to= "rainfall")%>%
   group_by(date_time, year, month, doy)%>%
-  summarise(P_RAIN_mean= mean(rainfall, na.rm=TRUE))
+  summarise(P_RAIN_mean= mean(rainfall, na.rm=TRUE))%>%
+  mutate(date=as.Date(date_time))
 
-#fraph average rainfall
+#Graph average rainfall
 ggplot(rain_mean, aes(date_time, P_RAIN_mean))+
   geom_line()
 
-#Graph Biomet all
-ggplot(biomet_all, aes(date_time, P_RAIN_mean))+
+#Graph rain_mean
+ggplot(rain_mean, aes(date_time, P_RAIN_mean))+
   geom_line()+
   labs(x="Date",y="Total Rainfall (mm)")+
   geom_line(color="navy")+
@@ -87,9 +88,9 @@ ggplot(annualdata, aes(factor(year), annual_rain))+
   geom_col()
 
 #total monthly data for all years combined
-monthlydata <- biomet_all%>%
+monthlydata <- rain_mean%>%
   group_by(month)%>%
-  summarize(monthly_rain= sum(P_RAIN_1_1_1, na.rm = TRUE))
+  summarize(monthly_rain= sum(P_RAIN_mean, na.rm = TRUE))
 print(monthlydata)
 
 #graph total monthly rainfall data for all years combined
@@ -97,9 +98,9 @@ ggplot(monthlydata, aes(factor(month), monthly_rain))+
   geom_point()
 
 #total monthly data for each year
-monthly_annualdata <- biomet_all%>%
+monthly_annualdata <- rain_mean%>%
   group_by(month, year)%>%
-  summarize(monthly_annualrain= sum(P_RAIN_1_1_1, na.rm = TRUE))
+  summarize(monthly_annualrain= sum(P_RAIN_mean, na.rm = TRUE))
 print(monthly_annualdata)
 
 #Calculate monthly mean across all years
@@ -114,9 +115,9 @@ ggplot(monthly_annualdata, aes(factor(month), monthly_annualrain))+
   
 
 #total daily data for years combined
-daily_data <- biomet_all%>%
+daily_data <- rain_mean%>%
   group_by(doy)%>%
-  summarize(daily_rain= sum(P_RAIN_1_1_1, na.rm = TRUE))
+  summarize(daily_rain= sum(P_RAIN_mean, na.rm = TRUE))
 print(daily_data)
 
 str(daily_data)
@@ -125,9 +126,9 @@ ggplot(daily_data, aes(doy, daily_rain))+
   geom_point()
 
 #total daily data for each year
-daily_annualdata <- biomet_all%>%
+daily_annualdata <- rain_mean%>%
   group_by(date)%>%
-  summarize(daily_annualrain= sum(P_RAIN_1_1_1, na.rm = TRUE))%>%
+  summarize(daily_annualrain= sum(P_RAIN_mean, na.rm = TRUE))%>%
            mutate(year=year(date),
                   month=month(date),
                   doy=yday(date))
@@ -451,7 +452,7 @@ p.rainevent <- na.omit(eventtotals) %>%
                     values = c("deepskyblue", "navy"))
   #facet_grid(year~.)
 
-p.soilmoisture <-biomet_all %>% 
+p.soilmoisture <-biomet_all%>% 
   filter(year==2013) %>% 
   ggplot(., aes(x=date_time))+
   labs(x= "Date", y= "Soil Water Content (%)")+
